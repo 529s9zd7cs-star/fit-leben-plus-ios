@@ -1,0 +1,71 @@
+name: iPhone-App bauen (.ipa zum Sideloaden)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Xcode prüfen
+        run: |
+          xcodebuild -version
+          XCODE_MAJOR=$(xcodebuild -version | awk '/Xcode/ {split($2, v, "."); print v[1]}')
+          test "$XCODE_MAJOR" -ge 26
+
+      - name: Abhängigkeiten installieren
+        run: npm ci
+
+      - name: Native Plugins synchronisieren
+        run: npx cap sync ios
+
+      - name: Bauen (unsigniert – Sideloadly signiert mit deiner Apple-ID)
+        run: |
+          set -o pipefail
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            -quiet build
+          test -d build/Build/Products/Release-iphoneos/App.app
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -qr ../../FIT_LEBEN_PLUS.ipa Payload
+
+      - name: IPA und Plugin-Registrierung prüfen
+        run: |
+          python3 - <<'PY'
+          import json, plistlib, zipfile
+          with zipfile.ZipFile("FIT_LEBEN_PLUS.ipa") as ipa:
+              info = plistlib.loads(ipa.read("Payload/App.app/Info.plist"))
+              assert info["CFBundleDisplayName"] == "FIT LEBEN PLUS", info
+              assert info["CFBundleIdentifier"] == "app.floot.u01bb6bca7f6b47b0bbfed6cff84dd031", info
+              assert "NSCameraUsageDescription" in info
+              assert "NSHealthShareUsageDescription" in info
+              config = json.loads(ipa.read("Payload/App.app/capacitor.config.json"))
+              assert config["server"]["url"] == "https://fit-leben-plus.floot.app"
+              expected = {"FilesystemPlugin", "SharePlugin", "TextToSpeechPlugin", "HealthPlugin"}
+              registered = set(config.get("packageClassList", []))
+              assert expected <= registered, f"Fehlende native Plugins: {expected - registered}"
+              print("IPA geprüft:", info["CFBundleIdentifier"])
+              print("Native Plugins:", ", ".join(sorted(registered)))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FIT-LEBEN-PLUS-ipa
+          path: FIT_LEBEN_PLUS.ipa
+          if-no-files-found: error
+          retention-days: 30

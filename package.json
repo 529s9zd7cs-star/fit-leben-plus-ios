@@ -1,0 +1,23 @@
+{
+  "name": "fit-leben-plus-ios",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FIT LEBEN PLUS – native iPhone-App für https://fit-leben-plus.floot.app",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "@capacitor-community/text-to-speech": "8.0.2",
+    "@capacitor/app": "8.0.0",
+    "@capacitor/browser": "8.0.0",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/ios": "8.6.0",
+    "@capacitor/share": "8.0.3",
+    "@capacitor/status-bar": "8.0.0",
+    "@capgo/capacitor-health": "8.11.13"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "appId": "app.floot.u01bb6bca7f6b47b0bbfed6cff84dd031",
+  "appName": "FIT LEBEN PLUS",
+  "webDir": "www",
+  "server": {
+    "url": "https://fit-leben-plus.floot.app",
+    "cleartext": false
+  },
+  "plugins": {
+    "CapacitorCookies": {
+      "enabled": true
+    },
+    "StatusBar": {
+      "overlaysWebView": false,
+      "backgroundColor": "#000000",
+      "style": "DARK"
+    },
+    "SystemBars": {
+      "style": "DARK",
+      "insetsHandling": "disable"
+    }
+  }
+}
